@@ -9,12 +9,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Extract Android project
-        run: |
-          unzip -o ANAS_FC_Manager_Cloud_Build.zip -d project
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -30,12 +26,54 @@ jobs:
         with:
           gradle-version: '8.7'
 
+      - name: Find and extract Android project ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ZIP_FILE="$(find . -type f -iname 'ANAS_FC_Manager_Cloud_Build.zip' -print -quit)"
+          if [ -z "$ZIP_FILE" ]; then
+            echo "ERROR: ANAS_FC_Manager_Cloud_Build.zip was not found in the repository."
+            echo "Files in repository:"
+            find . -maxdepth 4 -type f | head -200
+            exit 1
+          fi
+
+          echo "Found archive: $ZIP_FILE"
+          mkdir -p extracted
+          unzip -o "$ZIP_FILE" -d extracted
+
+          PROJECT_DIR="$(find extracted -type f \( -name 'settings.gradle' -o -name 'settings.gradle.kts' \) -printf '%h\n' | head -n 1)"
+          if [ -z "$PROJECT_DIR" ]; then
+            echo "ERROR: Could not find settings.gradle or settings.gradle.kts after extraction."
+            echo "Extracted files:"
+            find extracted -maxdepth 5 -type f | head -200
+            exit 1
+          fi
+
+          echo "Android project directory: $PROJECT_DIR"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+
       - name: Build debug APK
-        run: gradle -p project assembleDebug
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle -p "$PROJECT_DIR" assembleDebug
+
+          APK_FILE="$(find "$PROJECT_DIR" -type f -path '*/build/outputs/apk/debug/*.apk' -print -quit)"
+          if [ -z "$APK_FILE" ]; then
+            echo "ERROR: Build finished but no debug APK was found."
+            find "$PROJECT_DIR" -type f | grep -E '\\.apk$' || true
+            exit 1
+          fi
+
+          mkdir -p output/apk
+          cp "$APK_FILE" output/apk/ANAS-FC-Manager-debug.apk
+          echo "APK ready: output/apk/ANAS-FC-Manager-debug.apk"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: ANAS-FC-Manager-APK
-          path: project/app/build/outputs/apk/debug/app-debug.apk
+          path: output/apk/ANAS-FC-Manager-debug.apk
           if-no-files-found: error
