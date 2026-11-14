@@ -18,4 +18,4 @@
 - targetSdk: 28
 - package: com.anas.clipboard
 
-لم يتم تضمين APK في هذه الحزمة؛ يجب تشغيل GitHub Actions لبناء نسخة APK.
+يمكن بناء APK تلقائياً من تبويب Actions عبر سير العمل Build Anas Clipboard APK، ثم تنزيل artifact باسم Anas-Clipboard-debug-apk عند نجاح البناء.
