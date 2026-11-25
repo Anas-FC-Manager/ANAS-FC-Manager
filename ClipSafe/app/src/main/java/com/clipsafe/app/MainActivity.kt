@@ -1,6 +1,6 @@
 package com.clipsafe.app
 
-import android.app.Activity
+import androidx.fragment.app.FragmentActivity
 import android.os.Bundle
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -20,7 +20,7 @@ import java.security.SecureRandom
 import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.PBEKeySpec
 
-class MainActivity : Activity() {
+class MainActivity : FragmentActivity() {
     private val bg = Color.rgb(13, 17, 25)
     private val panel = Color.rgb(25, 32, 44)
     private val accent = Color.rgb(91, 156, 255)
@@ -180,7 +180,7 @@ class MainActivity : Activity() {
         if (text.isBlank() || text == lastSaved) { if (!silent) toast("ما في نص جديد للحفظ"); return }
         lastSaved = text
         val arr = readClips()
-        if (arr.any { it.optString("text") == text }) { if (!silent) toast("النص محفوظ مسبقاً"); return }
+        if ((0 until arr.length()).any { index -> arr.optJSONObject(index)?.optString("text") == text }) { if (!silent) toast("النص محفوظ مسبقاً"); return }
         arr.put(JSONObject().put("text", text).put("time", System.currentTimeMillis()))
         while (arr.length() > 300) arr.remove(0)
         prefs.edit().putString("clips", arr.toString()).apply()
