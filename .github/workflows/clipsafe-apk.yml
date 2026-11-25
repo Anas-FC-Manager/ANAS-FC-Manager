@@ -1,6 +1,11 @@
 name: Build ClipSafe APK
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "ClipSafe/**"
+      - ".github/workflows/clipsafe-apk.yml"
   push:
     branches: [clipsafe]
     paths:
